@@ -4,8 +4,11 @@ import requests
 import telebot
 from math import ceil
 import os
+from dotenv import load_dotenv
 
-token = os.environ["TELEGRAM_TOKEN"]
+load_dotenv()
+
+token = os.getenv("TELEGRAM_TOKEN")
 
 bot = telebot.TeleBot(token)
 

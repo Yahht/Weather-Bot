@@ -12,5 +12,6 @@ trafaret==2.1.0
 trafaret-config==2.0.2
 urllib3==1.26.3
 wcwidth==0.2.5
+rollbar==0.15.2
 
 python-dotenv~=0.17.0

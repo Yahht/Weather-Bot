@@ -2,12 +2,15 @@ from telebot import types
 from datetime import *
 import requests
 import telebot
+import rollbar
+
 from math import ceil
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
+rollbar.init(os.getenv('ROLLBAR_ACCESS_TOKEN'))
 token = os.getenv("TELEGRAM_TOKEN")
 
 bot = telebot.TeleBot(token)

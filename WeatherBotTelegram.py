@@ -2,8 +2,8 @@ from telebot import types
 from datetime import *
 import requests
 import telebot
+import psycopg2
 import rollbar
-
 from math import ceil
 import os
 from dotenv import load_dotenv
@@ -12,6 +12,39 @@ load_dotenv()
 
 rollbar.init(os.getenv('ROLLBAR_ACCESS_TOKEN'))
 token = os.getenv("TELEGRAM_TOKEN")
+
+
+def connect():
+    conn = psycopg2.connect(database=os.getenv('DB'),
+                            user=os.getenv('USER'),
+                            password=os.getenv('PASS'),
+                            host=os.getenv('HOST'),
+                            port=os.getenv('PORT'))
+    cursor = conn.cursor()
+    return cursor, conn
+
+
+def db_users(id, state):
+    cursor, conn = connect()
+    cursor.execute(f'SELECT user_id FROM users WHERE user_id = {id}')
+    select = cursor.fetchone()
+    if select is None:
+        cursor.execute("INSERT INTO users (user_id, state, created_at, updated_at)"
+                       f" VALUES ({id}, '{state}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+    else:
+        cursor.execute(f"UPDATE users SET state = '{state}', updated_at = CURRENT_TIMESTAMP WHERE user_id = {id}")
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def actions(query):
+    cursor, conn = connect()
+    cursor.execute(query=query)
+    conn.commit()
+    cursor.close()
+    conn.close()
+
 
 bot = telebot.TeleBot(token)
 
@@ -50,6 +83,7 @@ api_url = 'https://stepik.akentev.com/api/weather'
 def dispatcher(message):
     user_id = message.from_user.id
     state = data["states"].get(user_id, MAIN_STATE)
+    db_users(id=user_id, state=state)
 
     if state == MAIN_STATE:
         main_handler(message)
@@ -184,6 +218,9 @@ def weather_date(message):
                              f"За окном будет {data_['description']}  {weather_smile()},"
                              f" температура: {ceil(data_['temp'])}" + "°C")
             data["states"][user_id] = CITY_STATE
+
+        actions(query="INSERT INTO actions (user_id, city, forecast_day, created_at) "
+                      f"VALUES({user_id}, '{city}', '{data_forecast}', CURRENT_TIMESTAMP)")
 
 
 bot.polling()

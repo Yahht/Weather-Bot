@@ -126,29 +126,19 @@ def city_handler(message):
             data["states"][user_id] = CITY_STATE
 
         else:
-            day = datetime.today().strftime("%d")
-            day_next = datetime.today() + timedelta(days=1)
-            day_next_2 = datetime.today() + timedelta(days=2)
-
-            week_day_today = datetime.today().strftime("%a")
-            week_day_next_ = datetime.today() + timedelta(days=1)
-            week_day_next_2_ = datetime.today() + timedelta(days=2)
-            week_day_next = week_day_next_.strftime("%a")
-            week_day_next_2 = week_day_next_2_.strftime("%a")
-
-            month = datetime.today().strftime("%B")
-            month_next_ = datetime.today() + timedelta(days=1)
-            month_next_2_ = datetime.today() + timedelta(days=2)
-            month_next = month_next_.strftime("%B")
-            month_next_2 = month_next_2_.strftime("%B")
+            def timestamp(delta=0):
+                day = datetime.today() + timedelta(days=delta)
+                return day
 
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
             markup.add(*[types.KeyboardButton(button) for button in
-                         ["Сегодня (" + week_day[week_day_today] + ", " + day + " " + month_dict[month] + ")",
-                          "Завтра (" + week_day[week_day_next] + ", " + day_next.strftime("%d") + " " +
-                          month_dict[month_next] + ")",
-                          "Послезавтра (" + week_day[week_day_next_2] + ", " + day_next_2.strftime("%d") + " " +
-                          month_dict[month_next_2] + ")"]])
+                         ["Сегодня (" + week_day[timestamp().strftime("%a")] + ", " + timestamp().strftime("%d") + " " +
+                          month_dict[timestamp().strftime("%B")] + ")",
+                          "Завтра (" + week_day[timestamp(1).strftime("%a")] + ", " + timestamp(1).strftime(
+                              "%d") + " " + month_dict[timestamp(1).strftime("%B")] + ")",
+                          "Послезавтра (" + week_day[timestamp(2).strftime("%a")] + ", " + timestamp(2).strftime(
+                              "%d") + " " +
+                          month_dict[timestamp(2).strftime("%B")] + ")"]])
             bot.send_message(user_id, 'Сегодня, завтра, послезавтра?', reply_markup=markup)
             data["states"][user_id] = WEATHER_DATE_STATE
 

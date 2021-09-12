@@ -14,6 +14,7 @@ rollbar.init(os.getenv('ROLLBAR_ACCESS_TOKEN'))
 token = os.getenv("TELEGRAM_TOKEN")
 
 
+# database connection
 def connect():
     conn = psycopg2.connect(database=os.getenv('DB'),
                             user=os.getenv('USER'),
@@ -24,6 +25,7 @@ def connect():
     return cursor, conn
 
 
+# add new user data or updating state
 def db_users(id, state):
     cursor, conn = connect()
     cursor.execute(f'SELECT user_id FROM users WHERE user_id = {id}')
@@ -40,7 +42,7 @@ def db_users(id, state):
 
 def actions(query):
     cursor, conn = connect()
-    cursor.execute(query=query)
+    cursor.execute(query)
     conn.commit()
     cursor.close()
     conn.close()
@@ -54,6 +56,7 @@ WEATHER_DATE_STATE = "weather_date_handler"
 
 data = {'states': {}, MAIN_STATE: {}, CITY_STATE: {}, WEATHER_DATE_STATE: {}, 'forecast': {}, }
 
+# dictionaries for translation into Russian
 week_day = {'Mon': 'Пн',
             'Tue': 'Вт',
             'Wed': "Ср",
@@ -93,6 +96,7 @@ def dispatcher(message):
         weather_date(message)
 
 
+# dialog start function
 def main_handler(message):
     user_id = message.from_user.id
 
@@ -108,6 +112,7 @@ def main_handler(message):
         bot.send_message(user_id, "Я тебя не понял")
 
 
+# function with entering the name of the city
 def city_handler(message):
     user_id = message.from_user.id
 
@@ -121,6 +126,7 @@ def city_handler(message):
         response = requests.get(api_url, params={'city': city, 'forecast': 0})
         data_ = response.json()
 
+        # check for the wrong city name
         if 'error' in data_:
             bot.send_message(message.from_user.id, "Вы ввели неверный город, напишите название города еще раз")
             data["states"][user_id] = CITY_STATE
@@ -130,6 +136,7 @@ def city_handler(message):
                 day = datetime.today() + timedelta(days=delta)
                 return day
 
+            # create buttons
             markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
             markup.add(*[types.KeyboardButton(button) for button in
                          ["Сегодня (" + week_day[timestamp().strftime("%a")] + ", " + timestamp().strftime("%d") + " " +
@@ -143,6 +150,7 @@ def city_handler(message):
             data["states"][user_id] = WEATHER_DATE_STATE
 
 
+# function for entering the weather forecast day
 def weather_date(message):
     user_id = message.from_user.id
     city = data[WEATHER_DATE_STATE][user_id]
@@ -172,6 +180,7 @@ def weather_date(message):
         data_ = response.json()
         smile = data_['description']
 
+        # smile function
         def weather_smile():
             cloud, sun, rain, snow, cloud_2, cloud_sun = '☁', '☀', '🌧', '❄', "🌥", "⛅"
             if "пасмурно" in smile:
@@ -191,6 +200,7 @@ def weather_date(message):
 
             return send_smile
 
+        # depending on the selected day, a response from the bot is created
         if "сегодня" in message.text.lower():
             bot.send_message(message.from_user.id,
                              f"За окном {data_['description']}  {weather_smile()},"
